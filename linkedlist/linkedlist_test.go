@@ -17,7 +17,7 @@ var (
 )
 
 const (
-	LENGTH_OF_VERY_LONG_LIST = 100000
+	LENGTH_OF_VERY_LONG_LIST = 10000
 )
 
 //Sets test variables to default values.
@@ -39,7 +39,7 @@ func setVariablesToDefaults() {
 
 	veryLongList = NewLinkedList()
 	for i := 0; i < LENGTH_OF_VERY_LONG_LIST; i++ {
-		tenElementList.Append(i)
+		veryLongList.Append(i)
 	}
 }
 
@@ -60,7 +60,7 @@ func TestLength(t *testing.T) {
 		{emptyList, 0},
 		{oneElementList, 1},
 		{twoElementList, 2},
-		{twoElementList, 10},
+		{tenElementList, 10},
 		{veryLongList, LENGTH_OF_VERY_LONG_LIST},
 	}
 
@@ -125,19 +125,20 @@ func TestAppend(t *testing.T) {
 		list          *LinkedList
 		appendedValue interface{}
 		//Check list values at selected indexes
+		expectedLength                  int
 		expectedIndexValuePairs         map[int]interface{}
 		expectedIndexErrorExpectedPairs map[int]bool
 	}{
 		//Check exactly element is succesfully appended to a nil LinkedList
-		{nilList, 0, map[int]interface{}{0: 0, 1: nil}, map[int]bool{0: false, 1: true}},
+		//{nilList, 0, map[int]interface{}{0: 0, 1: nil}, map[int]bool{0: false, 1: true}},
 		//Check exactly element is succesfully appended to an empty LinkedList
-		{nilList, "0", map[int]interface{}{0: "0", 1: nil, 2: nil}, map[int]bool{0: false, 1: true, 2: true}},
+		//{nilList, "0", map[int]interface{}{0: "0", 1: nil, 2: nil}, map[int]bool{0: false, 1: true, 2: true}},
 		//Append one more element to a LinkedList of length 1
-		{oneElementList, 1, map[int]interface{}{0: 0, 1: 1, 2: nil}, map[int]bool{0: false, 1: false, 2: true}},
+		{oneElementList, 1, 2, map[int]interface{}{0: 0, 1: 1, 2: nil}, map[int]bool{0: false, 1: false, 2: true}},
 		//Append one more value to the result of the previous case
-		{oneElementList, 2, map[int]interface{}{0: 0, 1: 1, 2: 2}, map[int]bool{0: false, 1: false, 2: false}},
+		{oneElementList, 2, 3, map[int]interface{}{0: 0, 1: 1, 2: 2}, map[int]bool{0: false, 1: false, 2: false}},
 		//Append a value to a huge list
-		{veryLongList, -1, map[int]interface{}{0: 0, LENGTH_OF_VERY_LONG_LIST: -1}, map[int]bool{0: false, LENGTH_OF_VERY_LONG_LIST: false}},
+		{veryLongList, -1, LENGTH_OF_VERY_LONG_LIST + 1, map[int]interface{}{0: 0, 10: 10, LENGTH_OF_VERY_LONG_LIST: -1}, map[int]bool{0: false, 10: false, LENGTH_OF_VERY_LONG_LIST: false}},
 	}
 
 	for caseNumber, aCase := range cases {
@@ -165,6 +166,11 @@ func TestAppend(t *testing.T) {
 			if expectError && err == nil {
 				t.Errorf("Error in case %d, index %d. Expected an error, got no error", caseNumber, index)
 			}
+
+			length := aCase.list.Length()
+			if length != aCase.expectedLength {
+				t.Errorf("Error in case %d. Expected final length %d, got %d", aCase.expectedLength, length)
+			}
 		}
 	}
 
@@ -178,6 +184,14 @@ func TestAppend(t *testing.T) {
 	if _, ok := value.(struct{}); !ok {
 		t.Errorf("Structure added or extracted from linked list incorrectly")
 	}
+
+	//Test insert into a nil list panics
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("Inserting into a nil LinkedList should cause a panic, but didn't.")
+		}
+	}()
+	nilList.Append("-")
 }
 
 type expectation struct {
@@ -190,18 +204,18 @@ func TestRemove(t *testing.T) {
 	cases := []struct {
 		list                 *LinkedList
 		removalIndexSequence []int
+		expectedLength       int
 		expectedReturns      []expectation
 	}{
 		//Removal from empty lists. Check there is an error and no panic
-		{list: nilList, removalIndexSequence: []int{0}, expectedReturns: []expectation{{expectedValue: nil, expectError: true}}},
-		{list: nilList, removalIndexSequence: []int{1}, expectedReturns: []expectation{{expectedValue: nil, expectError: true}}},
-		{list: emptyList, removalIndexSequence: []int{0, 0}, expectedReturns: []expectation{{expectedValue: nil, expectError: true}, {expectedValue: nil, expectError: true}}},
-		{list: emptyList, removalIndexSequence: []int{-1}, expectedReturns: []expectation{{expectedValue: nil, expectError: true}}},
+		{list: emptyList, removalIndexSequence: []int{0, 0}, expectedLength: 0, expectedReturns: []expectation{{expectedValue: nil, expectError: true}, {expectedValue: nil, expectError: true}}},
+		{list: emptyList, removalIndexSequence: []int{-1}, expectedLength: 0, expectedReturns: []expectation{{expectedValue: nil, expectError: true}}},
 		//Removal from non-empty lists
-		{list: oneElementList, removalIndexSequence: []int{0, 1}, expectedReturns: []expectation{{expectedValue: 0, expectError: false}, {expectedValue: nil, expectError: true}}},
-		{list: twoElementList, removalIndexSequence: []int{1, 0}, expectedReturns: []expectation{{expectedValue: 1, expectError: false}, {expectedValue: 0, expectError: false}}},
+		{list: oneElementList, removalIndexSequence: []int{0, 1}, expectedLength: 0, expectedReturns: []expectation{{expectedValue: 0, expectError: false}, {expectedValue: nil, expectError: true}}},
+		{list: twoElementList, removalIndexSequence: []int{1, 0}, expectedLength: 0, expectedReturns: []expectation{{expectedValue: 1, expectError: false}, {expectedValue: 0, expectError: false}}},
+		{list: tenElementList, removalIndexSequence: []int{0}, expectedLength: 9, expectedReturns: []expectation{{expectedValue: "0", expectError: false}}},
 		//Removals from the end of a very long list
-		{list: veryLongList, removalIndexSequence: []int{LENGTH_OF_VERY_LONG_LIST - 1, LENGTH_OF_VERY_LONG_LIST - 1}, expectedReturns: []expectation{{expectedValue: LENGTH_OF_VERY_LONG_LIST - 1, expectError: false}, {expectedValue: nil, expectError: true}}},
+		{list: veryLongList, removalIndexSequence: []int{LENGTH_OF_VERY_LONG_LIST - 1, LENGTH_OF_VERY_LONG_LIST - 1}, expectedLength: LENGTH_OF_VERY_LONG_LIST - 1, expectedReturns: []expectation{{expectedValue: LENGTH_OF_VERY_LONG_LIST - 1, expectError: false}, {expectedValue: nil, expectError: true}}},
 	}
 
 	for caseNumber, aCase := range cases {
@@ -222,34 +236,45 @@ func TestRemove(t *testing.T) {
 				t.Errorf("Error in case %d. Expected value %v, got %v", caseNumber, aCase.expectedReturns[i].expectedValue, value)
 			}
 		}
+		length := aCase.list.Length()
+		if length != aCase.expectedLength {
+			t.Errorf("Error in case %d. Expected length %d, got %d", caseNumber, aCase.expectedLength, length)
+		}
 	}
+
+	//Test removal from a nil list panics
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("Removing from a nil LinkedList should cause a panic, but didn't.")
+		}
+	}()
+	nilList.Remove(0)
 }
 
 func TestInsertBefore(t *testing.T) {
 	setVariablesToDefaults()
 	cases := []struct {
-		list        *LinkedList
-		index       int
-		insertValue interface{}
-		expectError bool
+		list         *LinkedList
+		index        int
+		insertValue  interface{}
+		expectError  bool
+		expectLength int
 		//Check correct values are in correct position after the insert (uses GetValue() method)
 		expectAtIndexes map[int]expectation
 	}{
 		//Inserting into empty lists:
 		//Invalid indexes
-		{nilList, 1, "won't go in", true, map[int]expectation{0: expectation{expectedValue: nil, expectError: true}, 1: expectation{expectedValue: nil, expectError: true}}},
-		{emptyList, 1, "won't go in", true, map[int]expectation{0: expectation{expectedValue: nil, expectError: true}, 1: expectation{expectedValue: nil, expectError: true}}},
-		{emptyList, -1, "won't go in", true, map[int]expectation{0: expectation{expectedValue: nil, expectError: true}, 1: expectation{expectedValue: nil, expectError: true}}},
+		{emptyList, 1, "won't go in", true, 0, map[int]expectation{0: expectation{expectedValue: nil, expectError: true}, 1: expectation{expectedValue: nil, expectError: true}}},
+		{emptyList, -1, "won't go in", true, 0, map[int]expectation{0: expectation{expectedValue: nil, expectError: true}, 1: expectation{expectedValue: nil, expectError: true}}},
 		//Valid indexes
-		{nilList, 0, 0, false, map[int]expectation{0: expectation{expectedValue: 0, expectError: false}, 1: expectation{expectedValue: nil, expectError: true}}},
-		{emptyList, 0, 0, false, map[int]expectation{0: expectation{expectedValue: 0, expectError: false}, 1: expectation{expectedValue: nil, expectError: true}}},
+		{emptyList, 0, 0, false, 1, map[int]expectation{0: expectation{expectedValue: 0, expectError: false}, 1: expectation{expectedValue: nil, expectError: true}}},
 		//Inserting into non-empty list:
 		//Invalid indexes
-		{oneElementList, 2, "won't go in", true, map[int]expectation{0: expectation{expectedValue: 0, expectError: false}, 1: expectation{expectedValue: nil, expectError: true}}},
-		{veryLongList, LENGTH_OF_VERY_LONG_LIST + 1, "won't go in", true, map[int]expectation{LENGTH_OF_VERY_LONG_LIST - 1: expectation{expectedValue: LENGTH_OF_VERY_LONG_LIST - 1, expectError: false}, LENGTH_OF_VERY_LONG_LIST: expectation{expectedValue: nil, expectError: true}}},
+		{oneElementList, 2, "won't go in", true, 1, map[int]expectation{0: expectation{expectedValue: 0, expectError: false}, 1: expectation{expectedValue: nil, expectError: true}}},
+		{veryLongList, LENGTH_OF_VERY_LONG_LIST + 1, "won't go in", true, LENGTH_OF_VERY_LONG_LIST, map[int]expectation{LENGTH_OF_VERY_LONG_LIST - 1: expectation{expectedValue: LENGTH_OF_VERY_LONG_LIST - 1, expectError: false}, LENGTH_OF_VERY_LONG_LIST: expectation{expectedValue: nil, expectError: true}}},
 		//Valid indexes
-		{oneElementList, 1, 1, false, map[int]expectation{0: expectation{expectedValue: 0, expectError: false}, 1: expectation{expectedValue: 1, expectError: false}, 2: expectation{expectedValue: nil, expectError: true}}},
-		{veryLongList, 10, "10", false, map[int]expectation{LENGTH_OF_VERY_LONG_LIST: expectation{expectedValue: LENGTH_OF_VERY_LONG_LIST - 1, expectError: false}, LENGTH_OF_VERY_LONG_LIST + 1: expectation{expectedValue: nil, expectError: true}}},
+		{oneElementList, 1, 1, false, 2, map[int]expectation{0: expectation{expectedValue: 0, expectError: false}, 1: expectation{expectedValue: 1, expectError: false}, 2: expectation{expectedValue: nil, expectError: true}}},
+		{veryLongList, 10, "10", false, LENGTH_OF_VERY_LONG_LIST + 1, map[int]expectation{20: expectation{expectedValue: 19, expectError: false}, LENGTH_OF_VERY_LONG_LIST: expectation{expectedValue: LENGTH_OF_VERY_LONG_LIST - 1, expectError: false}, LENGTH_OF_VERY_LONG_LIST + 1: expectation{expectedValue: nil, expectError: true}}},
 	}
 
 	for caseNumber, aCase := range cases {
@@ -276,5 +301,83 @@ func TestInsertBefore(t *testing.T) {
 				t.Errorf("Error in case %d, index %d. Expected value %v, got %v", caseNumber, index, anExpectation.expectedValue, value)
 			}
 		}
+		length := aCase.list.Length()
+		if length != aCase.expectLength {
+			t.Errorf("Error in case %d. Expected length %d, got %d", caseNumber, aCase.expectLength, length)
+		}
 	}
+
+	//Test insert into a nil list panics
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("InsertBefore into a nil LinkedList should cause a panic, but didn't.")
+		}
+	}()
+	nilList.Append("-")
+}
+
+func TestInsertAfter(t *testing.T) {
+	setVariablesToDefaults()
+	cases := []struct {
+		list         *LinkedList
+		index        int
+		insertValue  interface{}
+		expectError  bool
+		expectLength int
+		//Check correct values are in correct position after the insert (uses GetValue() method)
+		expectAtIndexes map[int]expectation
+	}{
+		//Inserting into empty lists:
+		//Invalid indexes
+
+		{emptyList, 0, "won't go in", true, 0, map[int]expectation{0: expectation{expectedValue: nil, expectError: true}, 1: expectation{expectedValue: nil, expectError: true}}},
+		{emptyList, 1, "won't go in", true, 0, map[int]expectation{0: expectation{expectedValue: nil, expectError: true}, 1: expectation{expectedValue: nil, expectError: true}}},
+		//Valid indexes
+		{emptyList, -1, 0, false, 1, map[int]expectation{0: expectation{expectedValue: 0, expectError: false}, 1: expectation{expectedValue: nil, expectError: true}}},
+		//Inserting into non-empty list:
+		//Invalid indexes
+		{oneElementList, 1, "won't go in", true, 1, map[int]expectation{0: expectation{expectedValue: 0, expectError: false}, 1: expectation{expectedValue: nil, expectError: true}}},
+		{veryLongList, LENGTH_OF_VERY_LONG_LIST, "won't go in", true, LENGTH_OF_VERY_LONG_LIST, map[int]expectation{LENGTH_OF_VERY_LONG_LIST - 1: expectation{expectedValue: LENGTH_OF_VERY_LONG_LIST - 1, expectError: false}, LENGTH_OF_VERY_LONG_LIST: expectation{expectedValue: nil, expectError: true}}},
+		//Valid indexes
+		{oneElementList, 0, 1, false, 2, map[int]expectation{0: expectation{expectedValue: 0, expectError: false}, 1: expectation{expectedValue: 1, expectError: false}, 2: expectation{expectedValue: nil, expectError: true}}},
+		{veryLongList, 10, "11", false, LENGTH_OF_VERY_LONG_LIST + 1, map[int]expectation{20: expectation{expectedValue: 19, expectError: false}, LENGTH_OF_VERY_LONG_LIST: expectation{expectedValue: LENGTH_OF_VERY_LONG_LIST - 1, expectError: false}, LENGTH_OF_VERY_LONG_LIST + 1: expectation{expectedValue: nil, expectError: true}}},
+	}
+
+	for caseNumber, aCase := range cases {
+		err := aCase.list.InsertAfter(aCase.index, aCase.insertValue)
+
+		if err != nil && !aCase.expectError {
+			t.Errorf("Error in case %d. Expected no error, got error: %s", caseNumber, err.Error())
+		}
+		if err == nil && aCase.expectError {
+			t.Errorf("Error in case %d. Expected error, got no error", caseNumber)
+		}
+
+		//Check that correct values are in correct positions after the insert
+		for index, anExpectation := range aCase.expectAtIndexes {
+			value, err := aCase.list.GetValue(index)
+
+			if err != nil && !anExpectation.expectError {
+				t.Errorf("Error in case %d, index %d. Expected no error, got error: %s", caseNumber, index, err.Error())
+			}
+			if err == nil && anExpectation.expectError {
+				t.Errorf("Error in case %d, index %d. Expected error, got no error", caseNumber, index)
+			}
+			if value != anExpectation.expectedValue {
+				t.Errorf("Error in case %d, index %d. Expected value %v, got %v", caseNumber, index, anExpectation.expectedValue, value)
+			}
+		}
+		length := aCase.list.Length()
+		if length != aCase.expectLength {
+			t.Errorf("Error in case %d. Expected length %d, got %d", caseNumber, aCase.expectLength, length)
+		}
+	}
+
+	//Test insert into a nil list panics
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("InsertAfter into a nil LinkedList should cause a panic, but didn't.")
+		}
+	}()
+	nilList.Append("-")
 }
