@@ -387,15 +387,14 @@ func Example() {
 
 	aLinkedList.Append(3)
 	_ = aLinkedList.InsertBefore(0, "Hello!")
-	aLinkedList.Append(3)
 	_ = aLinkedList.InsertBefore(2, "Hello!")
 	aLinkedList.InsertAfter(1, []int{1, 2, 3})
 	value, err := aLinkedList.Remove(1)
 	if err != nil {
-		panic(err.Error())
 		//Handle error...
 	}
 	numValue := value.(int)
+
 	fmt.Printf("%d\n", numValue)
 
 	//Output:	3
