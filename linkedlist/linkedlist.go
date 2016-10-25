@@ -1,3 +1,6 @@
+//LinkedList is an implementation of a singly linked list.
+//Provides methods to insert, query and remove values.
+//Can be used directly or wrapped inside a custom structure.
 package linkedlist
 
 import (
@@ -5,25 +8,29 @@ import (
 )
 
 const (
-	PANIC_ON_INTERNAL_INCONSTENCIES = true
+	panic_on_internal_inconsistencies = true
 )
 
 //*************** Linked List Public Interface ***************
 
+//LinkedList is a singly linked list. Uses zero based indexing.
 type LinkedList struct {
 	baseElement *element
 	length      int
 }
 
+//NewLinkedList initializes an empty LinkedList. Recommended way of initialization.
 func NewLinkedList() *LinkedList {
 	return &LinkedList{baseElement: nil, length: 0}
 }
 
+//Length returns the current length of the LinkedList.
 func (ll *LinkedList) Length() int {
 	return ll.lengthValue()
 }
 
-//GetValue returns error when index is out of bound or LinkedList is nil
+//GetValue returns the value at the specified index.
+//Returns an error when index is out of bound or LinkedList is nil.
 func (ll *LinkedList) GetValue(index int) (value interface{}, err error) {
 	if ll == nil {
 		return nil, errors.New("Linked list is nil")
@@ -42,7 +49,8 @@ func (ll *LinkedList) GetValue(index int) (value interface{}, err error) {
 	return elem.value, nil
 }
 
-//Append panics with nil input
+//Append adds a value to the end of the linked list.
+//Panics on an uninitialized LinkedList.
 func (ll *LinkedList) Append(newValue interface{}) {
 	if ll == nil {
 		panic("Trying to append a nil linked list")
@@ -51,7 +59,8 @@ func (ll *LinkedList) Append(newValue interface{}) {
 	ll.insertElementBefore(length, newElement(newValue))
 }
 
-//Remove gives an error when index is out of bound.
+//Remove returns the value at the specified index, while removing it from the LinkedList.
+//Returns an error when index is out of bound or LinkedList is nil.
 func (ll *LinkedList) Remove(index int) (removedValue interface{}, err error) {
 	if ll == nil {
 		panic("Trying to remove from a nil linked list")
@@ -75,7 +84,7 @@ func (ll *LinkedList) Remove(index int) (removedValue interface{}, err error) {
 
 		newBaseElement, err := ll.elementAtIndex(1)
 		if err != nil {
-			if PANIC_ON_INTERNAL_INCONSTENCIES {
+			if panic_on_internal_inconsistencies {
 				panic("Failed to get the new base element.")
 			}
 			return nil, errors.New("Failed to get the new base element")
@@ -88,7 +97,7 @@ func (ll *LinkedList) Remove(index int) (removedValue interface{}, err error) {
 
 	elementRightBefore, err := ll.elementAtIndex(index - 1)
 	if err != nil {
-		if PANIC_ON_INTERNAL_INCONSTENCIES {
+		if panic_on_internal_inconsistencies {
 			panic("Failed to get element right before the one being removed")
 		}
 		return nil, err
@@ -100,7 +109,9 @@ func (ll *LinkedList) Remove(index int) (removedValue interface{}, err error) {
 	return value, nil
 }
 
-//InsertBefore returns an error when index is out of bound.
+//InsertBefore adds a value before the specified index of the linked list.
+//Returns an error for indexes outside of [0, Length()].
+//Panics on an uninitialized LinkedList.
 func (ll *LinkedList) InsertBefore(index int, newValue interface{}) error {
 	if ll == nil {
 		panic("Trying to append a nil linked list")
@@ -117,7 +128,9 @@ func (ll *LinkedList) InsertBefore(index int, newValue interface{}) error {
 	return nil
 }
 
-//InsertAfter returns an error when index is out of bound.
+//InsertAfter adds a value after the specified index of the linked list.
+//Returns an error for indexes outside of [-1, Length() - 1].
+//Panics on an uninitialized LinkedList.
 func (ll *LinkedList) InsertAfter(index int, newValue interface{}) (err error) {
 	if ll == nil {
 		panic("Trying to append a nil linked list")
@@ -146,7 +159,7 @@ func (ll *LinkedList) lengthValue() int {
 func (ll *LinkedList) changeLength(delta int) {
 	ll.length += delta
 
-	if PANIC_ON_INTERNAL_INCONSTENCIES {
+	if panic_on_internal_inconsistencies {
 		if ll.length < 0 {
 			panic("Length of the linked list is negative.")
 		}
@@ -155,7 +168,7 @@ func (ll *LinkedList) changeLength(delta int) {
 
 func (ll *LinkedList) elementAtIndex(index int) (elem *element, err error) {
 	if index < 0 {
-		if PANIC_ON_INTERNAL_INCONSTENCIES {
+		if panic_on_internal_inconsistencies {
 			panic("Trying to get element at a negative index.")
 		}
 		return nil, errors.New("Trying to get an element at a negative index")
@@ -179,6 +192,7 @@ func (ll *LinkedList) elementAtIndex(index int) (elem *element, err error) {
 
 func (ll *LinkedList) insertElementBefore(index int, insertedElement *element) {
 	if index == 0 {
+		insertedElement.setNextElement(ll.baseElement)
 		ll.setBaseElement(insertedElement)
 		ll.changeLength(1)
 		return
@@ -186,12 +200,12 @@ func (ll *LinkedList) insertElementBefore(index int, insertedElement *element) {
 
 	elementOneBefore, err := ll.elementAtIndex(index - 1)
 	if err != nil {
-		if PANIC_ON_INTERNAL_INCONSTENCIES {
+		if panic_on_internal_inconsistencies {
 			panic("Failed to access element that was suppose to be in bounds")
 		}
 		return
 	}
-	if elementOneBefore == nil && PANIC_ON_INTERNAL_INCONSTENCIES {
+	if elementOneBefore == nil && panic_on_internal_inconsistencies {
 		panic("Returned element is nil")
 	}
 	insertedElement.setNextElement(elementOneBefore.next)

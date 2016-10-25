@@ -129,10 +129,8 @@ func TestAppend(t *testing.T) {
 		expectedIndexValuePairs         map[int]interface{}
 		expectedIndexErrorExpectedPairs map[int]bool
 	}{
-		//Check exactly element is succesfully appended to a nil LinkedList
-		//{nilList, 0, map[int]interface{}{0: 0, 1: nil}, map[int]bool{0: false, 1: true}},
 		//Check exactly element is succesfully appended to an empty LinkedList
-		//{nilList, "0", map[int]interface{}{0: "0", 1: nil, 2: nil}, map[int]bool{0: false, 1: true, 2: true}},
+		{emptyList, "0", 1, map[int]interface{}{0: "0", 1: nil, 2: nil}, map[int]bool{0: false, 1: true, 2: true}},
 		//Append one more element to a LinkedList of length 1
 		{oneElementList, 1, 2, map[int]interface{}{0: 0, 1: 1, 2: nil}, map[int]bool{0: false, 1: false, 2: true}},
 		//Append one more value to the result of the previous case
@@ -274,6 +272,8 @@ func TestInsertBefore(t *testing.T) {
 		{veryLongList, LENGTH_OF_VERY_LONG_LIST + 1, "won't go in", true, LENGTH_OF_VERY_LONG_LIST, map[int]expectation{LENGTH_OF_VERY_LONG_LIST - 1: expectation{expectedValue: LENGTH_OF_VERY_LONG_LIST - 1, expectError: false}, LENGTH_OF_VERY_LONG_LIST: expectation{expectedValue: nil, expectError: true}}},
 		//Valid indexes
 		{oneElementList, 1, 1, false, 2, map[int]expectation{0: expectation{expectedValue: 0, expectError: false}, 1: expectation{expectedValue: 1, expectError: false}, 2: expectation{expectedValue: nil, expectError: true}}},
+		{oneElementList, 2, 2, false, 3, map[int]expectation{1: expectation{expectedValue: 1, expectError: false}, 2: expectation{expectedValue: 2, expectError: false}}},
+		{twoElementList, 0, 0, false, 3, map[int]expectation{0: expectation{expectedValue: 0, expectError: false}, 1: expectation{expectedValue: 0, expectError: false}}},
 		{veryLongList, 10, "10", false, LENGTH_OF_VERY_LONG_LIST + 1, map[int]expectation{20: expectation{expectedValue: 19, expectError: false}, LENGTH_OF_VERY_LONG_LIST: expectation{expectedValue: LENGTH_OF_VERY_LONG_LIST - 1, expectError: false}, LENGTH_OF_VERY_LONG_LIST + 1: expectation{expectedValue: nil, expectError: true}}},
 	}
 
@@ -380,4 +380,23 @@ func TestInsertAfter(t *testing.T) {
 		}
 	}()
 	nilList.Append("-")
+}
+
+func Example() {
+	aLinkedList := NewLinkedList()
+
+	aLinkedList.Append(3)
+	_ = aLinkedList.InsertBefore(0, "Hello!")
+	aLinkedList.Append(3)
+	_ = aLinkedList.InsertBefore(2, "Hello!")
+	aLinkedList.InsertAfter(1, []int{1, 2, 3})
+	value, err := aLinkedList.Remove(1)
+	if err != nil {
+		panic(err.Error())
+		//Handle error...
+	}
+	numValue := value.(int)
+	fmt.Printf("%d\n", numValue)
+
+	//Output:	3
 }
