@@ -1,31 +1,42 @@
 //LinkedList is an implementation of a singly linked list.
 //Provides methods to insert, query and remove values.
 //Can be used directly or wrapped inside a custom structure.
+//Safe to use concurrently.
 package linkedlist
 
 import (
 	"errors"
+	"sync"
 )
 
+//Make runtime asserts fatal
 const (
 	panic_on_internal_inconsistencies = true
 )
 
 //*************** Linked List Public Interface ***************
 
-//LinkedList is a singly linked list. Uses zero based indexing.
+//LinkedList is a singly linked list. Goroutine safe. Uses zero based indexing.
 type LinkedList struct {
 	baseElement *element
 	length      int
+	rwMutex     sync.RWMutex
 }
 
 //NewLinkedList initializes an empty LinkedList. Recommended way of initialization.
 func NewLinkedList() *LinkedList {
-	return &LinkedList{baseElement: nil, length: 0}
+	return &LinkedList{baseElement: nil, length: 0, rwMutex: sync.RWMutex{}}
 }
 
 //Length returns the current length of the LinkedList.
 func (ll *LinkedList) Length() int {
+	if ll == nil {
+		return 0
+	}
+
+	ll.rwMutex.RLock()
+	defer ll.rwMutex.RUnlock()
+
 	return ll.lengthValue()
 }
 
@@ -35,6 +46,10 @@ func (ll *LinkedList) GetValue(index int) (value interface{}, err error) {
 	if ll == nil {
 		return nil, errors.New("Linked list is nil")
 	}
+
+	ll.rwMutex.RLock()
+	defer ll.rwMutex.RUnlock()
+
 	if index < 0 {
 		return nil, errors.New("Can't get element - index is negative")
 	}
@@ -55,6 +70,10 @@ func (ll *LinkedList) Append(newValue interface{}) {
 	if ll == nil {
 		panic("Trying to append a nil linked list")
 	}
+
+	ll.rwMutex.Lock()
+	defer ll.rwMutex.Unlock()
+
 	length := ll.lengthValue()
 	ll.insertElementBefore(length, newElement(newValue))
 }
@@ -65,6 +84,9 @@ func (ll *LinkedList) Remove(index int) (removedValue interface{}, err error) {
 	if ll == nil {
 		panic("Trying to remove from a nil linked list")
 	}
+
+	ll.rwMutex.Lock()
+	defer ll.rwMutex.Unlock()
 
 	if index < 0 {
 		return nil, errors.New("Can't remove element - index is negative")
@@ -117,6 +139,9 @@ func (ll *LinkedList) InsertBefore(index int, newValue interface{}) error {
 		panic("Trying to append a nil linked list")
 	}
 
+	ll.rwMutex.Lock()
+	defer ll.rwMutex.Unlock()
+
 	if index < 0 {
 		return errors.New("Can't insert value before index - index is negative")
 	}
@@ -135,6 +160,9 @@ func (ll *LinkedList) InsertAfter(index int, newValue interface{}) (err error) {
 	if ll == nil {
 		panic("Trying to append a nil linked list")
 	}
+
+	ll.rwMutex.Lock()
+	defer ll.rwMutex.Unlock()
 
 	if index < -1 {
 		return errors.New("Can't insert value after - index is below -1")

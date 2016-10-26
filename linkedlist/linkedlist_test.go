@@ -3,7 +3,9 @@ package linkedlist_test
 import (
 	. "datatypes/linkedlist"
 	"fmt"
+	"sync"
 	"testing"
+	"time"
 )
 
 //Test variables
@@ -42,6 +44,8 @@ func setVariablesToDefaults() {
 		veryLongList.Append(i)
 	}
 }
+
+//*************** Public Interface Test ***************
 
 func TestNewLinkedList(t *testing.T) {
 	linkedL := NewLinkedList()
@@ -387,15 +391,52 @@ func Example() {
 
 	aLinkedList.Append(3)
 	_ = aLinkedList.InsertBefore(0, "Hello!")
-	_ = aLinkedList.InsertBefore(2, "Hello!")
 	aLinkedList.InsertAfter(1, []int{1, 2, 3})
+
 	value, err := aLinkedList.Remove(1)
 	if err != nil {
 		//Handle error...
 	}
 	numValue := value.(int)
-
 	fmt.Printf("%d\n", numValue)
 
 	//Output:	3
+}
+
+//*************** Concurrency Test ***************
+
+//Test concurrent access to the LinkedList. Run with `go test -race` for better race detection.
+func TestConcurrency(t *testing.T) {
+	linkedL := NewLinkedList()
+	linkedL.Append(0)
+	var waitGroup sync.WaitGroup
+
+	for i := 0; i < 100; i++ {
+		waitGroup.Add(1)
+		go bombardLinkedList(linkedL, &waitGroup)
+	}
+
+	waitGroup.Wait()
+	length := linkedL.Length()
+	if length != 1 {
+		t.Errorf("Error is concurrency test. Length is %d in the end, should be one.", length)
+	}
+}
+
+func bombardLinkedList(linkedL *LinkedList, waitGroup *sync.WaitGroup) {
+	linkedL.InsertBefore(0, "")
+	_ = linkedL.Length()
+	linkedL.InsertAfter(0, "-")
+	_ = linkedL.Length()
+	linkedL.Append("*")
+	_ = linkedL.Length()
+
+	_, _ = linkedL.Remove(2)
+	_, _ = linkedL.Remove(0)
+	_, _ = linkedL.Remove(0)
+	_ = linkedL.Length()
+
+	time.Sleep(time.Microsecond)
+
+	waitGroup.Done()
 }
