@@ -96,14 +96,6 @@ func TestPeek(t *testing.T) {
 			t.Errorf("Error in case %d. Expected value %v, got %v", i, aCase.expectedValue, peekValue)
 		}
 	}
-
-	defer func() {
-		rec := recover()
-		if rec == nil {
-			t.Errorf("Peek on a nil queue should cause a panic, did not")
-		}
-	}()
-	nilQueue.Peek()
 }
 
 type dequeueExpectation struct {
