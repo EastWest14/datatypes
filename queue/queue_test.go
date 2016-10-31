@@ -2,7 +2,9 @@ package queue_test
 
 import (
 	. "datatypes/queue"
+	"sync"
 	"testing"
+	"time"
 )
 
 var (
@@ -33,6 +35,8 @@ func setVariablesToDefaults() {
 		veryLongQueue.Enqueue(i)
 	}
 }
+
+//*************** Public Interface Test ***************
 
 func TestNewQueue(t *testing.T) {
 	newQueue := NewQueue()
@@ -206,4 +210,41 @@ func TestRemove(t *testing.T) {
 		}
 	}()
 	nilQueue.Dequeue()
+}
+
+//*************** Concurrency Test ***************
+
+//Test concurrent access to the Queue. Run with `go test -race` for better race detection.
+func TestConcurrency(t *testing.T) {
+	aQueue := NewQueue()
+	aQueue.Enqueue(0)
+
+	var wg sync.WaitGroup
+	for i := 0; i < 1000; i++ {
+		wg.Add(1)
+		go bombardQueue(aQueue, &wg)
+	}
+
+	wg.Wait()
+
+	//Check there is exactly one value remaining in the queue
+	lastRemainingValue, err := aQueue.Dequeue()
+	if err != nil || lastRemainingValue != "-" {
+		t.Errorf("Queue returning incorrect value after concurrent access")
+	}
+	_, err = aQueue.Dequeue()
+	if err == nil {
+		t.Errorf("Queue should be empty, but doesn't return error")
+	}
+}
+
+func bombardQueue(queue *Queue, wg *sync.WaitGroup) {
+	queue.Length()
+	queue.Enqueue("-")
+	queue.Peek()
+	queue.Dequeue()
+	queue.Length()
+
+	time.Sleep(time.Microsecond)
+	wg.Done()
 }

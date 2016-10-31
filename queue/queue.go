@@ -2,6 +2,7 @@ package queue
 
 import (
 	"errors"
+	"sync"
 )
 
 //Make runtime asserts fatal
@@ -15,6 +16,7 @@ type Queue struct {
 	length           int
 	topOfTheQueue    *element
 	bottomOfTheQueue *element
+	rwMutex          sync.RWMutex
 }
 
 func NewQueue() *Queue {
@@ -26,8 +28,8 @@ func (q *Queue) Length() int {
 		return 0
 	}
 
-	//Read block
-	//defer read unlock
+	q.rwMutex.RLock()
+	defer q.rwMutex.RUnlock()
 
 	return q.lengthValue()
 }
@@ -41,8 +43,8 @@ func (q *Queue) Peek() (value interface{}, err error) {
 		return nil, errors.New("Queue is nil")
 	}
 
-	//Issue read block
-	//Defer write unlock
+	q.rwMutex.RLock()
+	defer q.rwMutex.RUnlock()
 
 	//Find length
 	length := q.lengthValue()
@@ -72,8 +74,8 @@ func (q *Queue) Enqueue(value interface{}) {
 		panic("Queue is nil")
 	}
 
-	//Issue write block
-	//Defer write unlock
+	q.rwMutex.Lock()
+	defer q.rwMutex.Unlock()
 
 	//Create a new element
 	newElem := newElement(value, nil)
@@ -102,8 +104,8 @@ func (q *Queue) Dequeue() (valueRemoved interface{}, err error) {
 		panic("Queue is nil")
 	}
 
-	//Issue write block
-	//Defer write unlock
+	q.rwMutex.Lock()
+	defer q.rwMutex.Unlock()
 
 	length := q.lengthValue()
 
