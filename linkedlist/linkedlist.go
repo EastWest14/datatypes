@@ -28,7 +28,7 @@ func NewLinkedList() *LinkedList {
 	return &LinkedList{baseElement: nil, length: 0, rwMutex: sync.RWMutex{}}
 }
 
-//Length returns the current length of the LinkedList.
+//Length returns the current length of the LinkedList. Returns 0 on an uninitialized LinkedList.
 func (ll *LinkedList) Length() int {
 	if ll == nil {
 		return 0

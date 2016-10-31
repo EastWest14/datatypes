@@ -2,6 +2,7 @@ package queue_test
 
 import (
 	. "datatypes/queue"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -44,7 +45,7 @@ func TestNewQueue(t *testing.T) {
 		t.Fatalf("Initialization of new queue fails")
 	}
 	if newQueue.Length() != 0 {
-		t.Error("Queue initialized to non-zero value")
+		t.Error("Queue initialized to non-zero length")
 	}
 }
 
@@ -78,7 +79,7 @@ func TestPeek(t *testing.T) {
 	}{
 		{queueInstance: emptyQueue, expectedValue: nil, expectError: true},
 		{queueInstance: oneElementQueue, expectedValue: 0, expectError: false},
-		//Check it stays the same
+		//Check Peek() value stays consistent
 		{queueInstance: oneElementQueue, expectedValue: 0, expectError: false},
 		{queueInstance: twoElementQueue, expectedValue: "0", expectError: false},
 		{queueInstance: veryLongQueue, expectedValue: 0, expectError: false},
@@ -102,11 +103,13 @@ func TestPeek(t *testing.T) {
 	}
 }
 
+//Used to test return values of the Dequeue() method
 type dequeueExpectation struct {
 	value       interface{}
 	expectError bool
 }
 
+//TestEnqueue adds elements to the queue then removes some of them and checks the returned values and errors.
 func TestEnqueue(t *testing.T) {
 	setVariablesToDefaults()
 	cases := []struct {
@@ -115,10 +118,13 @@ func TestEnqueue(t *testing.T) {
 		expectedLengthAfterEnqueue int
 		dequeueExpectations        []dequeueExpectation
 	}{
+		//Add value to an empty queue
 		{emptyQueue, []interface{}{0}, 1, []dequeueExpectation{{value: 0, expectError: false}, {value: nil, expectError: true}}},
+		//Add two elements to a one element queue
 		{oneElementQueue, []interface{}{1, 2}, 3, []dequeueExpectation{{value: 0, expectError: false}, {value: 1, expectError: false}, {value: 2, expectError: false}, {value: nil, expectError: true}}},
-		//Test enqueue after a dequeue
+		//Test enqueue on a completely dequeued queue
 		{oneElementQueue, []interface{}{"New only element"}, 1, []dequeueExpectation{{value: "New only element", expectError: false}, {value: nil, expectError: true}}},
+		//Add one value to a very long queue
 		{veryLongQueue, []interface{}{"last value"}, LENGTH_OF_LONG_QUEUE + 1, []dequeueExpectation{{value: 0, expectError: false}}},
 	}
 
@@ -154,6 +160,7 @@ func TestEnqueue(t *testing.T) {
 		}
 	}
 
+	//Test Enqueue on a nil queue panics
 	defer func() {
 		rec := recover()
 		if rec == nil {
@@ -163,7 +170,7 @@ func TestEnqueue(t *testing.T) {
 	nilQueue.Enqueue(0)
 }
 
-func TestRemove(t *testing.T) {
+func TestDequeue(t *testing.T) {
 	setVariablesToDefaults()
 	cases := []struct {
 		queueInstance       *Queue
@@ -197,12 +204,14 @@ func TestRemove(t *testing.T) {
 			}
 		}
 
+		//Check the final length of the Queue is correct
 		length := aCase.queueInstance.Length()
 		if length != aCase.expectedLength {
 			t.Errorf("Error in case %d. Expected value %v, got %v", caseNumber, aCase.expectedLength, length)
 		}
 	}
 
+	//Test Dequeue on a nil queue panics
 	defer func() {
 		rec := recover()
 		if rec == nil {
@@ -212,14 +221,32 @@ func TestRemove(t *testing.T) {
 	nilQueue.Dequeue()
 }
 
+func Example() {
+	aQueue := NewQueue()
+
+	aQueue.Enqueue("first value")
+	aQueue.Enqueue("second value")
+
+	value, err := aQueue.Dequeue()
+	if err != nil {
+		//Handle error...
+	}
+	length := aQueue.Length()
+
+	fmt.Printf("Dequeued value: %v, length: %d", value, length)
+	//Output: Dequeued value: first value, length: 1
+}
+
 //*************** Concurrency Test ***************
 
-//Test concurrent access to the Queue. Run with `go test -race` for better race detection.
+//TestConcurrency accesses the Queue from multiple goroutines. Run with `go test -race` for better race detection.
 func TestConcurrency(t *testing.T) {
 	aQueue := NewQueue()
 	aQueue.Enqueue(0)
 
 	var wg sync.WaitGroup
+
+	//Bombard the queue from many goroutines at once.
 	for i := 0; i < 1000; i++ {
 		wg.Add(1)
 		go bombardQueue(aQueue, &wg)

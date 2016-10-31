@@ -411,6 +411,7 @@ func TestConcurrency(t *testing.T) {
 	linkedL.Append(0)
 	var waitGroup sync.WaitGroup
 
+	//Bombard the linked list from many goroutines at once.
 	for i := 0; i < 100; i++ {
 		waitGroup.Add(1)
 		go bombardLinkedList(linkedL, &waitGroup)

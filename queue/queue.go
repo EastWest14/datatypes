@@ -1,3 +1,7 @@
+//Queue is an implementation of a FIFO queue.
+//Provides methods to enqueue, dequeue and lookup values.
+//Can be used directly or wrapped inside a custom structure.
+//Safe to use concurrently.
 package queue
 
 import (
@@ -12,17 +16,20 @@ const (
 
 //*************** Queue Public Interface ***************
 
+//Queue is a FIFO queue. Goroutine safe.
 type Queue struct {
-	length           int
-	topOfTheQueue    *element
-	bottomOfTheQueue *element
-	rwMutex          sync.RWMutex
+	length          int
+	frontOfTheQueue *element
+	backOfTheQueue  *element
+	rwMutex         sync.RWMutex
 }
 
+//NewQueue initializes an empty Queue. Recommended way of initialization.
 func NewQueue() *Queue {
 	return &Queue{}
 }
 
+//Length returns the current number of values in the queue. Returns 0 on an uninitialized Queue.
 func (q *Queue) Length() int {
 	if q == nil {
 		return 0
@@ -31,14 +38,13 @@ func (q *Queue) Length() int {
 	q.rwMutex.RLock()
 	defer q.rwMutex.RUnlock()
 
+	//Call internal function to obtain the length value
 	return q.lengthValue()
 }
 
-//Peek returns the value at the front without removing it from the queue.
+//Peek returns the value at the front of the queue without removing it.
 //If the queue is empty or nil, returns an error.
 func (q *Queue) Peek() (value interface{}, err error) {
-	//Check the queue is not nil
-	//If it is nil, return error
 	if q == nil {
 		return nil, errors.New("Queue is nil")
 	}
@@ -46,29 +52,26 @@ func (q *Queue) Peek() (value interface{}, err error) {
 	q.rwMutex.RLock()
 	defer q.rwMutex.RUnlock()
 
-	//Find length
 	length := q.lengthValue()
+	//If queue is empty - Peek returns an eror
 	if length == 0 {
 		return nil, errors.New("Queue is empty")
 	}
-	//If the length is zero - return error and nil
 
-	//Get the top element
-	//If it is nil - internal inconsistency
-	//Return value and nil for error
-	topElement := q.topOfTheQueue
-	if topElement == nil {
+	//Get value of the front element and check for internal inconsistencies
+	frontElement := q.frontOfTheQueue
+	if frontElement == nil {
 		if panic_on_internal_inconsistencies {
-			panic("Top element is nil, suppose to be not nil")
+			panic("Front element is nil, suppose to be not nil")
 		}
-		return nil, errors.New("Top element is nil, suppose to be not nil")
+		return nil, errors.New("Front element is nil, suppose to be not nil")
 	}
 
-	return topElement.value, nil
+	return frontElement.value, nil
 }
 
 //Enqueue adds the value to back of the queue.
-//Panics on an iuninitialized queue
+//Panics on an uninitialized queue.
 func (q *Queue) Enqueue(value interface{}) {
 	if q == nil {
 		panic("Queue is nil")
@@ -77,28 +80,26 @@ func (q *Queue) Enqueue(value interface{}) {
 	q.rwMutex.Lock()
 	defer q.rwMutex.Unlock()
 
-	//Create a new element
 	newElem := newElement(value, nil)
-	//Find length
 	length := q.lengthValue()
 
-	//If the length is zero - set the element as top and bottom,
-	//Append length. Return.
+	//If the length is zero - set the new element as front and back of the queue.
 	if length == 0 {
-		q.topOfTheQueue = newElem
-		q.bottomOfTheQueue = newElem
+		q.frontOfTheQueue = newElem
+		q.backOfTheQueue = newElem
 		q.changeLength(1)
 		return
 	}
 
-	//Make current bottom point to new element.
-	//Set new bottom. Append length.
+	//Make current back element point to new element. Set new back element.
 	newElem.previousElement = nil
-	q.bottomOfTheQueue.previousElement = newElem
-	q.bottomOfTheQueue = newElem
+	q.backOfTheQueue.previousElement = newElem
+	q.backOfTheQueue = newElem
 	q.changeLength(1)
 }
 
+//Dequeue removes the value from the front of the queue. If queue is empty, returns error.
+//Panics on an uninitialized queue.
 func (q *Queue) Dequeue() (valueRemoved interface{}, err error) {
 	if q == nil {
 		panic("Queue is nil")
@@ -109,35 +110,34 @@ func (q *Queue) Dequeue() (valueRemoved interface{}, err error) {
 
 	length := q.lengthValue()
 
-	//If length is 0 - return error
+	//If queue is empty - return error
 	if length == 0 {
 		return nil, errors.New("Queue is already empty")
 	}
 
-	//If length is 1 - remember top element, remove top and bottom.
-	//Decrease length. Return element value and nil.
+	//If length is 1 - remember front element, remove front and back elements.
 	if length == 1 {
-		currentTopElement := q.topOfTheQueue
-		if currentTopElement == nil && panic_on_internal_inconsistencies {
+		currentFrontElement := q.frontOfTheQueue
+		if currentFrontElement == nil && panic_on_internal_inconsistencies {
 			panic("The only element in the queue is nil")
 		}
 
-		q.topOfTheQueue = nil
-		q.bottomOfTheQueue = nil
+		q.frontOfTheQueue = nil
+		q.backOfTheQueue = nil
 		q.changeLength(-1)
-		return currentTopElement.value, nil
+		return currentFrontElement.value, nil
 	}
 
-	//If length is > 1 - remember to element, reset top as its previous.
-	//Decrease length. Return element value and nil.
-	currentTopElement := q.topOfTheQueue
-	if currentTopElement == nil && panic_on_internal_inconsistencies {
-		panic("Top element of the queue is nil")
+	//If length is > 1 - remember front element, reset front as its previous element (could be nil).
+	currentFrontElement := q.frontOfTheQueue
+	//Check for an internal runtime inconsistency
+	if currentFrontElement == nil && panic_on_internal_inconsistencies {
+		panic("Front element of the queue is nil")
 	}
 
-	q.topOfTheQueue = currentTopElement.previousElement
+	q.frontOfTheQueue = currentFrontElement.previousElement
 	q.changeLength(-1)
-	return currentTopElement.value, nil
+	return currentFrontElement.value, nil
 }
 
 //*************** Queue Internal Structure ***************
@@ -151,6 +151,7 @@ func newElement(value interface{}, previousElement *element) *element {
 	return &element{value: value, previousElement: previousElement}
 }
 
+//Internal lenght method with no locking.
 func (q *Queue) lengthValue() (length int) {
 	return q.length
 }
