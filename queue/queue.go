@@ -70,7 +70,7 @@ func (q *Queue) Peek() (value interface{}, err error) {
 	return frontElement.value, nil
 }
 
-//Enqueue adds the value to back of the queue.
+//Enqueue adds value to back of the queue.
 //Panics on an uninitialized queue.
 func (q *Queue) Enqueue(value interface{}) {
 	if q == nil {
