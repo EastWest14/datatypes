@@ -20,7 +20,7 @@ const LENGTH_OF_LONG_QUEUE = 100000
 
 //Sets test variables to default values.
 func setVariablesToDefaults() {
-	nilQueue = nilQueue
+	nilQueue = nil
 
 	emptyQueue = NewQueue()
 
@@ -43,9 +43,6 @@ func TestNewQueue(t *testing.T) {
 	newQueue := NewQueue()
 	if newQueue == nil {
 		t.Fatalf("Initialization of new queue fails")
-	}
-	if newQueue.Length() != 0 {
-		t.Error("Queue initialized to non-zero length")
 	}
 }
 
@@ -77,6 +74,7 @@ func TestPeek(t *testing.T) {
 		expectedValue interface{}
 		expectError   bool
 	}{
+		{queueInstance: nilQueue, expectedValue: nil, expectError: true},
 		{queueInstance: emptyQueue, expectedValue: nil, expectError: true},
 		{queueInstance: oneElementQueue, expectedValue: 0, expectError: false},
 		//Check Peek() value stays consistent
