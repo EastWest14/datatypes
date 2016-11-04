@@ -101,7 +101,7 @@ func TestPeek(t *testing.T) {
 	}
 }
 
-//Used to test return values of the Dequeue() method
+//Used to test return values of the Dequeue method
 type dequeueExpectation struct {
 	value       interface{}
 	expectError bool
@@ -118,7 +118,7 @@ func TestEnqueue(t *testing.T) {
 	}{
 		//Add value to an empty queue
 		{emptyQueue, []interface{}{0}, 1, []dequeueExpectation{{value: 0, expectError: false}, {value: nil, expectError: true}}},
-		//Add two elements to a one element queue
+		//Add two values to a one element queue
 		{oneElementQueue, []interface{}{1, 2}, 3, []dequeueExpectation{{value: 0, expectError: false}, {value: 1, expectError: false}, {value: 2, expectError: false}, {value: nil, expectError: true}}},
 		//Test enqueue on a completely dequeued queue
 		{oneElementQueue, []interface{}{"New only element"}, 1, []dequeueExpectation{{value: "New only element", expectError: false}, {value: nil, expectError: true}}},
@@ -176,7 +176,7 @@ func TestDequeue(t *testing.T) {
 		expectedLength      int
 	}{
 		{emptyQueue, []dequeueExpectation{{value: nil, expectError: true}}, 0},
-		//Try double remove on empty queue
+		//Try double dequeue when queue already empty
 		{oneElementQueue, []dequeueExpectation{{value: 0, expectError: false}, {value: nil, expectError: true}, {value: nil, expectError: true}}, 0},
 		{twoElementQueue, []dequeueExpectation{{value: "0", expectError: false}}, 1},
 	}
