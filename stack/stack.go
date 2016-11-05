@@ -6,6 +6,7 @@ package stack
 
 import (
 	"errors"
+	"sync"
 )
 
 //Make runtime asserts fatal
@@ -19,6 +20,7 @@ const (
 type Stack struct {
 	length     int
 	topElement *element
+	rwMutex    sync.RWMutex
 }
 
 //NewStack initializes an empty Stack. Recommended way of initialization.
@@ -32,6 +34,9 @@ func (s *Stack) Length() int {
 		return 0
 	}
 
+	s.rwMutex.RLock()
+	defer s.rwMutex.RUnlock()
+
 	return s.lengthValue()
 }
 
@@ -41,6 +46,9 @@ func (s *Stack) Peek() (value interface{}, err error) {
 	if s == nil {
 		return nil, errors.New("Stack is nil")
 	}
+
+	s.rwMutex.RLock()
+	defer s.rwMutex.RUnlock()
 
 	length := s.lengthValue()
 	//Empty stack case
@@ -62,6 +70,9 @@ func (s *Stack) Pop() (value interface{}, err error) {
 	if s == nil {
 		panic("Stack is nil")
 	}
+
+	s.rwMutex.Lock()
+	defer s.rwMutex.Unlock()
 
 	length := s.lengthValue()
 	//Empty stack case
@@ -87,18 +98,15 @@ func (s *Stack) Push(value interface{}) {
 		panic("Stack is nil")
 	}
 
+	s.rwMutex.Lock()
+	defer s.rwMutex.Unlock()
+
 	newElement := newElement(value)
 	//currentTop can be nil
 	currentTop := s.topElement
 	s.topElement = newElement
 	newElement.previousElement = currentTop
 	s.changeLength(1)
-	//If length is 0 - create a new element, add it to the stack
-	//Increase length.
-	//Return.
-
-	//Create new element, remember current top, add new element to the top.
-	//Make previous top previous element
 	return
 }
 

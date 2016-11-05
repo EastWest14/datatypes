@@ -3,7 +3,9 @@ package stack_test
 import (
 	. "datatypes/stack"
 	"fmt"
+	"sync"
 	"testing"
+	"time"
 )
 
 var (
@@ -233,4 +235,44 @@ func Example() {
 
 	fmt.Printf("Popped value: %v, length: %d", value, length)
 	//Output: Popped value: Second value, length: 1
+}
+
+//*************** Concurrency Test ***************
+
+//TestConcurrency accesses the Stack from multiple goroutines. Run with `go test -race` for better race detection.
+func TestConcurrency(t *testing.T) {
+	aStack := NewStack()
+	aStack.Push(0)
+
+	var wg sync.WaitGroup
+
+	//Bombard the stack from many goroutines at once.
+	for i := 0; i < 1000; i++ {
+		wg.Add(1)
+		go bombardStack(aStack, &wg)
+	}
+
+	wg.Wait()
+
+	//Check there is exactly one value remaining in the stack
+	lastRemainingValue, err := aStack.Pop()
+	if err != nil || lastRemainingValue != 0 {
+		t.Errorf("Stack returning incorrect value after concurrent access")
+	}
+	_, err = aStack.Pop()
+	if err == nil {
+		t.Errorf("Stack should be empty, but doesn't return error")
+	}
+}
+
+func bombardStack(stack *Stack, wg *sync.WaitGroup) {
+	//Total number of values is preserved and never drops bellow the entry count
+	stack.Length()
+	stack.Push("-")
+	stack.Peek()
+	stack.Pop()
+	stack.Length()
+
+	time.Sleep(time.Microsecond)
+	wg.Done()
 }
