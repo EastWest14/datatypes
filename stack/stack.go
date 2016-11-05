@@ -4,41 +4,124 @@
 //Safe to use concurrently.
 package stack
 
+import (
+	"errors"
+)
+
 //Make runtime asserts fatal
 const (
 	panic_on_internal_inconsistencies = true
 )
 
-//*************** Queue Public Interface ***************
+//*************** Stack Public Interface ***************
 
 //Stack is a LIFO stack. Goroutine safe.
 type Stack struct {
+	length     int
+	topElement *element
 }
 
 //NewStack initializes an empty Stack. Recommended way of initialization.
 func NewStack() *Stack {
-	return &Stack{}
+	return &Stack{length: 0, topElement: nil}
 }
 
 //Length returns the current number of values in the stack. Returns 0 on an uninitialized stack.
 func (s *Stack) Length() int {
-	return 0
+	if s == nil {
+		return 0
+	}
+
+	return s.lengthValue()
 }
 
 //Peek returns the value at the top of the stack without removing it.
 //If the stack is empty or nil, returns an error.
 func (s *Stack) Peek() (value interface{}, err error) {
-	return nil, nil
+	if s == nil {
+		return nil, errors.New("Stack is nil")
+	}
+
+	length := s.lengthValue()
+	//Empty stack case
+	if length == 0 {
+		if s.topElement != nil && panic_on_internal_inconsistencies {
+			panic("Stack is suppose to be empty, but top element is not nil")
+		}
+
+		return nil, errors.New("Stack is empty")
+	}
+
+	topElement := s.topElement
+	return topElement.value, nil
 }
 
 //Pop removes the value from the top of the stack. If the stack is empty, returns an error.
 //Panics on an uninitialized stack.
 func (s *Stack) Pop() (value interface{}, err error) {
-	return nil, nil
+	if s == nil {
+		panic("Stack is nil")
+	}
+
+	length := s.lengthValue()
+	//Empty stack case
+	if length == 0 {
+		if s.topElement != nil && panic_on_internal_inconsistencies {
+			panic("Stack is suppose to be empty, but top element is not nil")
+		}
+
+		return nil, errors.New("Stack is empty")
+	}
+
+	//Replace top element
+	topElement := s.topElement
+	s.topElement = topElement.previousElement
+	s.changeLength(-1)
+	return topElement.value, nil
 }
 
 //Push ads value to the top of the stack.
 //Panics on an uninitialized stack.
 func (s *Stack) Push(value interface{}) {
+	if s == nil {
+		panic("Stack is nil")
+	}
+
+	newElement := newElement(value)
+	//currentTop can be nil
+	currentTop := s.topElement
+	s.topElement = newElement
+	newElement.previousElement = currentTop
+	s.changeLength(1)
+	//If length is 0 - create a new element, add it to the stack
+	//Increase length.
+	//Return.
+
+	//Create new element, remember current top, add new element to the top.
+	//Make previous top previous element
 	return
+}
+
+//*************** Stack Internal Structure ***************
+
+type element struct {
+	value           interface{}
+	previousElement *element
+}
+
+func newElement(value interface{}) *element {
+	return &element{value: value}
+}
+
+//Internal lenght method with no locking.
+func (s *Stack) lengthValue() (length int) {
+	return s.length
+}
+
+func (s *Stack) changeLength(delta int) {
+	s.length += delta
+
+	if s.length < 0 && panic_on_internal_inconsistencies {
+		panic("Stack has negative length")
+	}
 }

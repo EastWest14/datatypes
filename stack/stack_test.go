@@ -78,8 +78,8 @@ func TestPeek(t *testing.T) {
 		{stackInstance: oneElementStack, expectedValue: 0, expectError: false},
 		//Check peeked value stays consistent
 		{stackInstance: oneElementStack, expectedValue: 0, expectError: false},
-		{stackInstance: tenElementStack, expectedValue: 10, expectError: false},
-		{stackInstance: veryLargeStack, expectedValue: LENGTH_OF_LARGE_STACK, expectError: false},
+		{stackInstance: tenElementStack, expectedValue: "9", expectError: false},
+		{stackInstance: veryLargeStack, expectedValue: LENGTH_OF_LARGE_STACK - 1, expectError: false},
 	}
 
 	for i, aCase := range cases {
@@ -177,8 +177,8 @@ func TestPop(t *testing.T) {
 		{emptyStack, []popExpectation{{value: nil, expectError: true}}, 0},
 		//Try double pop on already empty stack
 		{oneElementStack, []popExpectation{{value: 0, expectError: false}, {value: nil, expectError: true}, {value: nil, expectError: true}}, 0},
-		{tenElementStack, []popExpectation{{value: "0", expectError: false}}, 9},
-		{veryLargeStack, []popExpectation{{value: LENGTH_OF_LARGE_STACK, expectError: false}}, LENGTH_OF_LARGE_STACK - 1},
+		{tenElementStack, []popExpectation{{value: "9", expectError: false}}, 9},
+		{veryLargeStack, []popExpectation{{value: LENGTH_OF_LARGE_STACK - 1, expectError: false}}, LENGTH_OF_LARGE_STACK - 1},
 	}
 
 	for caseNumber, aCase := range cases {
@@ -232,5 +232,5 @@ func Example() {
 	length := aStack.Length()
 
 	fmt.Printf("Popped value: %v, length: %d", value, length)
-	//Output: Popped value: first value, length: 1
+	//Output: Popped value: Second value, length: 1
 }
