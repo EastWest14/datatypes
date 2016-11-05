@@ -1,2 +1,2 @@
 # datatypes
-Abstract datatype implementations in Go.
+Thread safe abstract datatype implementations in Go.
